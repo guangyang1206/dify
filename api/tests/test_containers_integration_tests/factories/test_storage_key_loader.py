@@ -121,7 +121,9 @@ class TestStorageKeyLoader:
         upload_file = self._create_upload_file(db_session_with_containers, tenant_id, user_id)
         file = self._create_file(tenant_id, related_id=upload_file.id, transfer_method=FileTransferMethod.LOCAL_FILE)
 
-        loader = StorageKeyLoader(db_session_with_containers, tenant_id, access_controller=DatabaseFileAccessController())
+        loader = StorageKeyLoader(
+            db_session_with_containers, tenant_id, access_controller=DatabaseFileAccessController()
+        )
         loader.load_storage_keys([file])
 
         assert file._storage_key == upload_file.key
@@ -134,7 +136,9 @@ class TestStorageKeyLoader:
         upload_file = self._create_upload_file(db_session_with_containers, tenant_id, user_id)
         file = self._create_file(tenant_id, related_id=upload_file.id, transfer_method=FileTransferMethod.REMOTE_URL)
 
-        loader = StorageKeyLoader(db_session_with_containers, tenant_id, access_controller=DatabaseFileAccessController())
+        loader = StorageKeyLoader(
+            db_session_with_containers, tenant_id, access_controller=DatabaseFileAccessController()
+        )
         loader.load_storage_keys([file])
 
         assert file._storage_key == upload_file.key
@@ -148,7 +152,9 @@ class TestStorageKeyLoader:
         tool_file = self._create_tool_file(db_session_with_containers, tenant_id, user_id, conversation_id)
         file = self._create_file(tenant_id, related_id=tool_file.id, transfer_method=FileTransferMethod.TOOL_FILE)
 
-        loader = StorageKeyLoader(db_session_with_containers, tenant_id, access_controller=DatabaseFileAccessController())
+        loader = StorageKeyLoader(
+            db_session_with_containers, tenant_id, access_controller=DatabaseFileAccessController()
+        )
         loader.load_storage_keys([file])
 
         assert file._storage_key == tool_file.file_key
@@ -167,7 +173,9 @@ class TestStorageKeyLoader:
         file2 = self._create_file(tenant_id, related_id=upload_file2.id, transfer_method=FileTransferMethod.REMOTE_URL)
         file3 = self._create_file(tenant_id, related_id=tool_file.id, transfer_method=FileTransferMethod.TOOL_FILE)
 
-        loader = StorageKeyLoader(db_session_with_containers, tenant_id, access_controller=DatabaseFileAccessController())
+        loader = StorageKeyLoader(
+            db_session_with_containers, tenant_id, access_controller=DatabaseFileAccessController()
+        )
         loader.load_storage_keys([file1, file2, file3])
 
         assert file1._storage_key == upload_file1.key
@@ -177,7 +185,9 @@ class TestStorageKeyLoader:
     def test_load_storage_keys_empty_list(self, db_session_with_containers: Session):
         """Test with empty file list — should not raise."""
         tenant_id = str(uuid4())
-        loader = StorageKeyLoader(db_session_with_containers, tenant_id, access_controller=DatabaseFileAccessController())
+        loader = StorageKeyLoader(
+            db_session_with_containers, tenant_id, access_controller=DatabaseFileAccessController()
+        )
         loader.load_storage_keys([])
 
     def test_load_storage_keys_ignores_legacy_file_tenant_id(self, db_session_with_containers: Session):
@@ -193,7 +203,9 @@ class TestStorageKeyLoader:
             override_tenant_id=str(uuid4()),
         )
 
-        loader = StorageKeyLoader(db_session_with_containers, tenant_id, access_controller=DatabaseFileAccessController())
+        loader = StorageKeyLoader(
+            db_session_with_containers, tenant_id, access_controller=DatabaseFileAccessController()
+        )
         loader.load_storage_keys([file])
 
         assert file._storage_key == upload_file.key
@@ -207,7 +219,9 @@ class TestStorageKeyLoader:
         file = self._create_file(tenant_id, related_id=upload_file.id, transfer_method=FileTransferMethod.LOCAL_FILE)
         file.related_id = None
 
-        loader = StorageKeyLoader(db_session_with_containers, tenant_id, access_controller=DatabaseFileAccessController())
+        loader = StorageKeyLoader(
+            db_session_with_containers, tenant_id, access_controller=DatabaseFileAccessController()
+        )
         with pytest.raises(ValueError, match="file id should not be None."):
             loader.load_storage_keys([file])
 
@@ -216,7 +230,9 @@ class TestStorageKeyLoader:
         tenant_id = str(uuid4())
         file = self._create_file(tenant_id, related_id=str(uuid4()), transfer_method=FileTransferMethod.LOCAL_FILE)
 
-        loader = StorageKeyLoader(db_session_with_containers, tenant_id, access_controller=DatabaseFileAccessController())
+        loader = StorageKeyLoader(
+            db_session_with_containers, tenant_id, access_controller=DatabaseFileAccessController()
+        )
         with pytest.raises(ValueError):
             loader.load_storage_keys([file])
 
@@ -225,7 +241,9 @@ class TestStorageKeyLoader:
         tenant_id = str(uuid4())
         file = self._create_file(tenant_id, related_id=str(uuid4()), transfer_method=FileTransferMethod.TOOL_FILE)
 
-        loader = StorageKeyLoader(db_session_with_containers, tenant_id, access_controller=DatabaseFileAccessController())
+        loader = StorageKeyLoader(
+            db_session_with_containers, tenant_id, access_controller=DatabaseFileAccessController()
+        )
         with pytest.raises(ValueError):
             loader.load_storage_keys([file])
 
@@ -238,7 +256,9 @@ class TestStorageKeyLoader:
         file = self._create_file(tenant_id, related_id=upload_file.id, transfer_method=FileTransferMethod.LOCAL_FILE)
         file.related_id = "invalid-uuid-format"
 
-        loader = StorageKeyLoader(db_session_with_containers, tenant_id, access_controller=DatabaseFileAccessController())
+        loader = StorageKeyLoader(
+            db_session_with_containers, tenant_id, access_controller=DatabaseFileAccessController()
+        )
         with pytest.raises(ValueError):
             loader.load_storage_keys([file])
 
@@ -261,8 +281,12 @@ class TestStorageKeyLoader:
             for tf in tool_files
         ]
 
-        loader = StorageKeyLoader(db_session_with_containers, tenant_id, access_controller=DatabaseFileAccessController())
-        with patch.object(db_session_with_containers, "scalars", wraps=db_session_with_containers.scalars) as mock_scalars:
+        loader = StorageKeyLoader(
+            db_session_with_containers, tenant_id, access_controller=DatabaseFileAccessController()
+        )
+        with patch.object(
+            db_session_with_containers, "scalars", wraps=db_session_with_containers.scalars
+        ) as mock_scalars:
             loader.load_storage_keys(files)
             # Exactly 2 DB round-trips: one for UploadFile, one for ToolFile
             assert mock_scalars.call_count == 2
@@ -296,7 +320,9 @@ class TestStorageKeyLoader:
             override_tenant_id=other_tenant_id,
         )
 
-        loader = StorageKeyLoader(db_session_with_containers, tenant_id, access_controller=DatabaseFileAccessController())
+        loader = StorageKeyLoader(
+            db_session_with_containers, tenant_id, access_controller=DatabaseFileAccessController()
+        )
 
         with pytest.raises(ValueError, match="Upload file not found for id:"):
             loader.load_storage_keys([file_other])
@@ -321,7 +347,9 @@ class TestStorageKeyLoader:
             override_tenant_id=str(uuid4()),
         )
 
-        loader = StorageKeyLoader(db_session_with_containers, tenant_id, access_controller=DatabaseFileAccessController())
+        loader = StorageKeyLoader(
+            db_session_with_containers, tenant_id, access_controller=DatabaseFileAccessController()
+        )
         with pytest.raises(ValueError, match="Upload file not found for id:"):
             loader.load_storage_keys([file_current, file_other])
 
@@ -334,7 +362,9 @@ class TestStorageKeyLoader:
         file1 = self._create_file(tenant_id, related_id=upload_file.id, transfer_method=FileTransferMethod.LOCAL_FILE)
         file2 = self._create_file(tenant_id, related_id=upload_file.id, transfer_method=FileTransferMethod.LOCAL_FILE)
 
-        loader = StorageKeyLoader(db_session_with_containers, tenant_id, access_controller=DatabaseFileAccessController())
+        loader = StorageKeyLoader(
+            db_session_with_containers, tenant_id, access_controller=DatabaseFileAccessController()
+        )
         loader.load_storage_keys([file1, file2])
 
         assert file1._storage_key == upload_file.key
