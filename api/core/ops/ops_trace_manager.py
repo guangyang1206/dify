@@ -6,7 +6,7 @@ import queue
 import threading
 import time
 from datetime import timedelta
-from typing import TYPE_CHECKING, Any, TypedDict
+from typing import TYPE_CHECKING, Any, Protocol, TypedDict
 from uuid import UUID, uuid4
 
 from cachetools import LRUCache
@@ -78,7 +78,14 @@ def _lookup_app_and_workspace_names(app_id: str | None, tenant_id: str | None) -
     return app_name, workspace_name
 
 
-_PROVIDER_TYPE_TO_MODEL: dict[str, type] = {
+class _NamedModel(Protocol):
+    """Protocol for SQLAlchemy ORM models that have ``id`` and ``name`` mapped columns."""
+
+    id: Any
+    name: Any
+
+
+_PROVIDER_TYPE_TO_MODEL: dict[str, type[_NamedModel]] = {
     "builtin": BuiltinToolProvider,
     "plugin": BuiltinToolProvider,
     "api": ApiToolProvider,
@@ -94,7 +101,7 @@ def _lookup_credential_name(credential_id: str | None, provider_type: str | None
     if not model_cls:
         return ""
     with Session(db.engine) as session:
-        name = session.scalar(select(model_cls.name).where(model_cls.id == credential_id))  # type: ignore[attr-defined]
+        name = session.scalar(select(model_cls.name).where(model_cls.id == credential_id))
         return str(name) if name else ""
 
 
