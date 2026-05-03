@@ -4,6 +4,7 @@ import { cn } from '@langgenius/dify-ui/cn'
 import Autoplay from 'embla-carousel-autoplay'
 import useEmblaCarousel from 'embla-carousel-react'
 import * as React from 'react'
+import { use } from 'react'
 
 type CarouselApi = UseEmblaCarouselType[1]
 type UseCarouselParameters = Parameters<typeof useEmblaCarousel>
@@ -29,7 +30,7 @@ type CarouselContextValue = {
 const CarouselContext = React.createContext<CarouselContextValue | null>(null)
 
 function useCarousel() {
-  const context = React.useContext(CarouselContext)
+  const context = use(CarouselContext)
 
   if (!context)
     throw new Error('useCarousel must be used within a <Carousel />')

@@ -30,7 +30,7 @@ import {
 
 import { cn } from '@langgenius/dify-ui/cn'
 import * as React from 'react'
-import { useCallback, useState } from 'react'
+import { use, useCallback, useState } from 'react'
 
 type PortalToFollowElemOptions = {
   /*
@@ -115,7 +115,7 @@ type ContextType = ReturnType<typeof usePortalToFollowElem> | null
 const PortalToFollowElemContext = React.createContext<ContextType>(null)
 
 function usePortalToFollowElemContext() {
-  const context = React.useContext(PortalToFollowElemContext)
+  const context = use(PortalToFollowElemContext)
 
   if (context == null)
     throw new Error('PortalToFollowElem components must be wrapped in <PortalToFollowElem />')
