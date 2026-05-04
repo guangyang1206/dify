@@ -2,7 +2,7 @@
 import type { CommonResponse } from '@/models/common'
 import type { DocType, FullDocumentDetail } from '@/models/datasets'
 import { toast } from '@langgenius/dify-ui/toast'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { modifyDocMetadata } from '@/service/datasets'
 import { asyncRunSafe } from '@/utils'
@@ -29,6 +29,7 @@ export function useMetadataState({ docDetail, onUpdate }: UseMetadataStateOption
   const { t } = useTranslation()
   const datasetId = useDocumentContext(s => s.datasetId)
   const documentId = useDocumentContext(s => s.documentId)
+
   // If no documentType yet, start in editing + showDocTypes mode
   const [editStatus, setEditStatus] = useState(!docType)
   const [metadataParams, setMetadataParams] = useState<MetadataState>(docType
@@ -37,24 +38,38 @@ export function useMetadataState({ docDetail, onUpdate }: UseMetadataStateOption
   const [showDocTypes, setShowDocTypes] = useState(!docType)
   const [tempDocType, setTempDocType] = useState<DocType | ''>('')
   const [saveLoading, setSaveLoading] = useState(false)
-  // Sync local state when the upstream docDetail changes (e.g. after save or navigation).
-  // These setters are intentionally called together to batch-reset multiple pieces
-  // of derived editing state that cannot be expressed as pure derived values.
-  useEffect(() => {
-    if (docDetail?.doc_type) {
-      // eslint-disable-next-line react-hooks-extra/no-direct-set-state-in-use-effect
-      setEditStatus(false)
-      // eslint-disable-next-line react-hooks-extra/no-direct-set-state-in-use-effect
-      setShowDocTypes(false)
-      // eslint-disable-next-line react-hooks-extra/no-direct-set-state-in-use-effect
-      setTempDocType(docType)
-      // eslint-disable-next-line react-hooks-extra/no-direct-set-state-in-use-effect
-      setMetadataParams({
-        documentType: docType,
-        metadata: (docDetail?.doc_metadata || {}) as Record<string, string>,
-      })
-    }
-  }, [docDetail?.doc_type, docDetail?.doc_metadata, docType])
+
+  // Track the last upstream snapshot to detect when docDetail changes.
+  // Storing refs (not state) avoids extra renders from tracking metadata.
+  const prevDocTypeRef = useRef(docDetail?.doc_type)
+  const prevDocMetadataRef = useRef(docDetail?.doc_metadata)
+
+  // Sync editing state when docDetail is updated by the server (e.g. after save
+  // or document navigation).  Using the "setState during render" pattern keeps
+  // this synchronous and avoids calling set functions inside useEffect.
+  //
+  // React allows calling a set function during render as long as the condition
+  // is based on props / previous render state and the call is outside any
+  // effect – React will discard the current render output and immediately
+  // re-render with the updated state.
+  //
+  // Ref: https://react.dev/reference/react/useState#storing-information-from-previous-renders
+  const docTypeChanged = prevDocTypeRef.current !== docDetail?.doc_type
+  const metadataChanged = prevDocMetadataRef.current !== docDetail?.doc_metadata
+
+  if ((docTypeChanged || metadataChanged) && docDetail?.doc_type) {
+    prevDocTypeRef.current = docDetail.doc_type
+    prevDocMetadataRef.current = docDetail.doc_metadata
+    const freshDocType = normalizeDocType(docDetail.doc_type)
+    setEditStatus(false)
+    setShowDocTypes(false)
+    setTempDocType(freshDocType)
+    setMetadataParams({
+      documentType: freshDocType,
+      metadata: (docDetail.doc_metadata || {}) as Record<string, string>,
+    })
+  }
+
   const confirmDocType = () => {
     if (!tempDocType)
       return
