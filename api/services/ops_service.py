@@ -137,12 +137,12 @@ class OpsService:
         return trace_config_data.to_dict()
 
     @classmethod
-    def create_tracing_app_config(cls, app_id: str, tracing_provider: str, tracing_config: dict[str, Any]):
+    def create_tracing_app_config(cls, app_id: str, tracing_provider: str, tracing_config: BaseTracingConfig):
         """
         Create tracing app config
         :param app_id: app id
         :param tracing_provider: tracing provider
-        :param tracing_config: tracing config
+        :param tracing_config: tracing config (typed BaseModel)
         :return:
         """
         try:
@@ -151,16 +151,18 @@ class OpsService:
             return {"error": f"Invalid tracing provider: {tracing_provider}"}
 
         provider_config: TracingProviderConfigEntry = provider_config_map[tracing_provider]
-        config_class: type[BaseTracingConfig] = provider_config["config_class"]
         other_keys: list[str] = provider_config["other_keys"]
 
-        default_config_instance = config_class.model_validate(tracing_config)
+        # Convert BaseTracingConfig to dict for downstream functions.
+        # Field defaults are already applied by the model's validators, so the
+        # model_validate + empty-key-fill roundtrip is no longer necessary.
+        tracing_config_dict: dict[str, Any] = tracing_config.model_dump()
         for key in other_keys:
-            if key in tracing_config and tracing_config[key] == "":
-                tracing_config[key] = getattr(default_config_instance, key, None)
+            if key in tracing_config_dict and not tracing_config_dict[key]:
+                tracing_config_dict[key] = getattr(tracing_config, key, None)
 
         # api check
-        if not OpsTraceManager.check_trace_config_is_effective(tracing_config, tracing_provider):
+        if not OpsTraceManager.check_trace_config_is_effective(tracing_config_dict, tracing_provider):
             return {"error": "Invalid Credentials"}
 
         # get project url
@@ -172,7 +174,7 @@ class OpsService:
         elif tracing_provider == "langfuse":
             try:
                 project_key = OpsTraceManager.get_trace_config_project_key(tracing_config, tracing_provider)
-                project_url = f"{tracing_config.get('host')}/project/{project_key}"
+                project_url = f"{tracing_config_dict.get('host')}/project/{project_key}"
             except Exception:
                 project_url = None
         elif tracing_provider in ("langsmith", "opik", "mlflow", "databricks", "tencent"):
@@ -198,13 +200,13 @@ class OpsService:
         if not app:
             return None
         tenant_id = app.tenant_id
-        tracing_config = OpsTraceManager.encrypt_tracing_config(tenant_id, tracing_provider, tracing_config)
+        encrypted_config = OpsTraceManager.encrypt_tracing_config(tenant_id, tracing_provider, tracing_config_dict)
         if project_url:
-            tracing_config["project_url"] = project_url
+            encrypted_config["project_url"] = project_url
         trace_config_data = TraceAppConfig(
             app_id=app_id,
             tracing_provider=tracing_provider,
-            tracing_config=tracing_config,
+            tracing_config=encrypted_config,
         )
         db.session.add(trace_config_data)
         db.session.commit()
@@ -212,12 +214,12 @@ class OpsService:
         return {"result": "success"}
 
     @classmethod
-    def update_tracing_app_config(cls, app_id: str, tracing_provider: str, tracing_config: dict[str, Any]):
+    def update_tracing_app_config(cls, app_id: str, tracing_provider: str, tracing_config: BaseTracingConfig):
         """
         Update tracing app config
         :param app_id: app id
         :param tracing_provider: tracing provider
-        :param tracing_config: tracing config
+        :param tracing_config: tracing config (typed BaseModel)
         :return:
         """
         try:
@@ -240,17 +242,19 @@ class OpsService:
         if not app:
             return None
         tenant_id = app.tenant_id
-        tracing_config = OpsTraceManager.encrypt_tracing_config(
-            tenant_id, tracing_provider, tracing_config, current_trace_config.tracing_config
+        # Convert BaseTracingConfig to dict for downstream functions
+        tracing_config_dict: dict[str, Any] = tracing_config.model_dump()
+        encrypted_config = OpsTraceManager.encrypt_tracing_config(
+            tenant_id, tracing_provider, tracing_config_dict, current_trace_config.tracing_config
         )
 
         # api check
         # decrypt_token
-        decrypt_tracing_config = OpsTraceManager.decrypt_tracing_config(tenant_id, tracing_provider, tracing_config)
+        decrypt_tracing_config = OpsTraceManager.decrypt_tracing_config(tenant_id, tracing_provider, encrypted_config)
         if not OpsTraceManager.check_trace_config_is_effective(decrypt_tracing_config, tracing_provider):
             raise ValueError("Invalid Credentials")
 
-        current_trace_config.tracing_config = tracing_config
+        current_trace_config.tracing_config = encrypted_config
         db.session.commit()
 
         return current_trace_config.to_dict()
@@ -276,3 +280,4 @@ class OpsService:
         db.session.commit()
 
         return True
+
