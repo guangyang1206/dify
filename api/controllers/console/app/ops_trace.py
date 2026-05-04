@@ -9,6 +9,7 @@ from controllers.console import console_ns
 from controllers.console.app.error import TracingConfigCheckError, TracingConfigIsExist, TracingConfigNotExist
 from controllers.console.wraps import account_initialization_required, setup_required
 from libs.login import login_required
+from core.ops.ops_trace_manager import provider_config_map
 from services.ops_service import OpsService
 
 DEFAULT_REF_TEMPLATE_SWAGGER_2_0 = "#/definitions/{model}"
@@ -76,8 +77,14 @@ class TraceAppConfigApi(Resource):
         args = TraceConfigPayload.model_validate(console_ns.payload)
 
         try:
+            # Validate the raw tracing_config dict into the appropriate typed model
+            # so the service receives a BaseTracingConfig instead of a plain dict.
+            config_class = provider_config_map.get(args.tracing_provider, {}).get("config_class")
+            if config_class is None:
+                raise BadRequest(f"Unsupported tracing provider: {args.tracing_provider}")
+            typed_tracing_config = config_class.model_validate(args.tracing_config)
             result = OpsService.create_tracing_app_config(
-                app_id=app_id, tracing_provider=args.tracing_provider, tracing_config=args.tracing_config
+                app_id=app_id, tracing_provider=args.tracing_provider, tracing_config=typed_tracing_config
             )
             if not result:
                 raise TracingConfigIsExist()
@@ -101,8 +108,13 @@ class TraceAppConfigApi(Resource):
         args = TraceConfigPayload.model_validate(console_ns.payload)
 
         try:
+            # Validate the raw tracing_config dict into the appropriate typed model
+            config_class = provider_config_map.get(args.tracing_provider, {}).get("config_class")
+            if config_class is None:
+                raise BadRequest(f"Unsupported tracing provider: {args.tracing_provider}")
+            typed_tracing_config = config_class.model_validate(args.tracing_config)
             result = OpsService.update_tracing_app_config(
-                app_id=app_id, tracing_provider=args.tracing_provider, tracing_config=args.tracing_config
+                app_id=app_id, tracing_provider=args.tracing_provider, tracing_config=typed_tracing_config
             )
             if not result:
                 raise TracingConfigNotExist()
@@ -130,3 +142,4 @@ class TraceAppConfigApi(Resource):
             return {"result": "success"}, 204
         except Exception as e:
             raise BadRequest(str(e))
+
