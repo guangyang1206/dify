@@ -2,7 +2,7 @@
 
 import { cn } from '@langgenius/dify-ui/cn'
 import * as React from 'react'
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useContextSelector } from 'use-context-selector'
 import { CreateFromDSLModalTab } from '@/app/components/app/create-from-dsl-modal'
@@ -58,11 +58,17 @@ const CreateAppCard = ({
   }, [dslUrl])
 
   const controlHideCreateFromTemplatePanel = useContextSelector(AppListContext, ctx => ctx.controlHideCreateFromTemplatePanel)
-  useEffect(() => {
+
+  // Close the template dialog whenever the context counter is incremented.
+  // Using the "setState during render" pattern avoids calling a set function
+  // inside useEffect, which satisfies react-hooks-extra/no-direct-set-state-in-use-effect.
+  // Ref: https://react.dev/reference/react/useState#storing-information-from-previous-renders
+  const prevControlHideRef = useRef(controlHideCreateFromTemplatePanel)
+  if (controlHideCreateFromTemplatePanel !== prevControlHideRef.current) {
+    prevControlHideRef.current = controlHideCreateFromTemplatePanel
     if (controlHideCreateFromTemplatePanel > 0)
-      // eslint-disable-next-line react-hooks-extra/no-direct-set-state-in-use-effect
       setShowNewAppTemplateDialog(false)
-  }, [controlHideCreateFromTemplatePanel])
+  }
 
   return (
     <div
