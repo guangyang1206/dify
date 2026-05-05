@@ -3,6 +3,7 @@ from typing import Literal
 from flask_restx import Resource
 from pydantic import BaseModel, Field, field_validator
 from sqlalchemy import select
+from sqlalchemy.orm import sessionmaker
 from werkzeug.exceptions import NotFound
 
 from constants.languages import supported_language
@@ -87,35 +88,35 @@ class AppSite(Resource):
     def post(self, app_model):
         args = AppSiteUpdatePayload.model_validate(console_ns.payload or {})
         current_user, _ = current_account_with_tenant()
-        site = db.session.scalar(select(Site).where(Site.app_id == app_model.id).limit(1))
-        if not site:
-            raise NotFound
+        with sessionmaker(db.engine).begin() as session:
+            site = session.scalar(select(Site).where(Site.app_id == app_model.id).limit(1))
+            if not site:
+                raise NotFound
 
-        for attr_name in [
-            "title",
-            "icon_type",
-            "icon",
-            "icon_background",
-            "description",
-            "default_language",
-            "chat_color_theme",
-            "chat_color_theme_inverted",
-            "customize_domain",
-            "copyright",
-            "privacy_policy",
-            "custom_disclaimer",
-            "customize_token_strategy",
-            "prompt_public",
-            "show_workflow_steps",
-            "use_icon_as_answer_icon",
-        ]:
-            value = getattr(args, attr_name)
-            if value is not None:
-                setattr(site, attr_name, value)
+            for attr_name in [
+                "title",
+                "icon_type",
+                "icon",
+                "icon_background",
+                "description",
+                "default_language",
+                "chat_color_theme",
+                "chat_color_theme_inverted",
+                "customize_domain",
+                "copyright",
+                "privacy_policy",
+                "custom_disclaimer",
+                "customize_token_strategy",
+                "prompt_public",
+                "show_workflow_steps",
+                "use_icon_as_answer_icon",
+            ]:
+                value = getattr(args, attr_name)
+                if value is not None:
+                    setattr(site, attr_name, value)
 
-        site.updated_by = current_user.id
-        site.updated_at = naive_utc_now()
-        db.session.commit()
+            site.updated_by = current_user.id
+            site.updated_at = naive_utc_now()
 
         return AppSiteResponse.model_validate(site, from_attributes=True).model_dump(mode="json")
 
@@ -135,14 +136,14 @@ class AppSiteAccessTokenReset(Resource):
     @get_app_model
     def post(self, app_model):
         current_user, _ = current_account_with_tenant()
-        site = db.session.scalar(select(Site).where(Site.app_id == app_model.id).limit(1))
+        with sessionmaker(db.engine).begin() as session:
+            site = session.scalar(select(Site).where(Site.app_id == app_model.id).limit(1))
 
-        if not site:
-            raise NotFound
+            if not site:
+                raise NotFound
 
-        site.code = Site.generate_code(16)
-        site.updated_by = current_user.id
-        site.updated_at = naive_utc_now()
-        db.session.commit()
+            site.code = Site.generate_code(16)
+            site.updated_by = current_user.id
+            site.updated_at = naive_utc_now()
 
         return AppSiteResponse.model_validate(site, from_attributes=True).model_dump(mode="json")
