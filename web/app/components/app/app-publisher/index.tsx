@@ -10,8 +10,8 @@ import { useSuspenseQuery } from '@tanstack/react-query'
 import { useKeyPress } from 'ahooks'
 import {
   memo,
+  use,
   useCallback,
-  useContext,
   useEffect,
   useMemo,
   useState,
@@ -104,7 +104,7 @@ const AppPublisher = ({
   const [embeddingModalOpen, setEmbeddingModalOpen] = useState(false)
   const [publishingToMarketplace, setPublishingToMarketplace] = useState(false)
 
-  const workflowStore = useContext(WorkflowContext)
+  const workflowStore = use(WorkflowContext)
   const appDetail = useAppStore(state => state.appDetail)
   const setAppDetail = useAppStore(s => s.setAppDetail)
   const { data: systemFeatures } = useSuspenseQuery(systemFeaturesQueryOptions())

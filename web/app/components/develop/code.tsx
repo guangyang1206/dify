@@ -5,7 +5,7 @@ import { cn } from '@langgenius/dify-ui/cn'
 import {
   Children,
   createContext,
-  useContext,
+  use,
   useEffect,
   useRef,
   useState,
@@ -292,7 +292,7 @@ export function Code({ children, ...props }: IChildProps) {
 }
 
 export function Pre({ children, ...props }: IChildrenProps) {
-  const isGrouped = useContext(CodeGroupContext)
+  const isGrouped = use(CodeGroupContext)
 
   if (isGrouped)
     return children
