@@ -9,6 +9,8 @@ from graphon.model_runtime.entities.message_entities import (
 )
 from graphon.model_runtime.utils.encoders import jsonable_encoder
 
+from typing import override
+
 
 class CotCompletionAgentRunner(CotAgentRunner):
     def _organize_instruction_prompt(self) -> str:
@@ -51,6 +53,7 @@ class CotCompletionAgentRunner(CotAgentRunner):
 
         return historic_prompt
 
+    @override
     def _organize_prompt_messages(self) -> list[PromptMessage]:
         """
         Organize prompt messages
