@@ -127,6 +127,10 @@ export const useSegmentationState = (options: UseSegmentationStateOptions = {}) 
 
   // Get process rule for API
   const getProcessRule = useCallback((docForm: ChunkingMode): ProcessRule => {
+    const summaryIndexSetting = summaryIndexSettingRef.current?.enable
+      ? { enable: true, ...summaryIndexSettingRef.current }
+      : undefined
+
     if (docForm === ChunkingMode.parentChild) {
       return {
         rules: {
@@ -142,7 +146,7 @@ export const useSegmentationState = (options: UseSegmentationStateOptions = {}) 
           },
         },
         mode: 'hierarchical',
-        summary_index_setting: summaryIndexSettingRef.current,
+        ...(summaryIndexSetting && { summary_index_setting: summaryIndexSetting }),
       } as ProcessRule
     }
 
@@ -156,7 +160,7 @@ export const useSegmentationState = (options: UseSegmentationStateOptions = {}) 
         },
       },
       mode: segmentationType,
-      summary_index_setting: summaryIndexSettingRef.current,
+      ...(summaryIndexSetting && { summary_index_setting: summaryIndexSetting }),
     } as ProcessRule
   }, [rules, parentChildConfig, segmentIdentifier, maxChunkLength, overlap, segmentationType])
 

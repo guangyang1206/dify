@@ -106,7 +106,7 @@ const getFileIndexingEstimateParamsForFile = ({
     process_rule: processRule,
     doc_form: docForm,
     doc_language: docLanguage,
-    dataset_id,
+    ...(dataset_id && { dataset_id }),
   }
 }
 
@@ -147,7 +147,7 @@ const getFileIndexingEstimateParamsForNotion = ({
     process_rule: processRule,
     doc_form: docForm,
     doc_language: docLanguage,
-    dataset_id,
+    ...(dataset_id && { dataset_id }),
   }
 }
 
@@ -197,7 +197,7 @@ const getFileIndexingEstimateParamsForWeb = ({
     process_rule: processRule,
     doc_form: docForm,
     doc_language: docLanguage,
-    dataset_id,
+    ...(dataset_id && { dataset_id }),
   }
 }
 
