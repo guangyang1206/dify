@@ -1,4 +1,5 @@
 from flask_restx import Resource
+from typing import override
 
 from controllers.common.schema import register_schema_models
 from controllers.console import console_ns
@@ -15,6 +16,7 @@ register_schema_models(console_ns, ComposerSavePayload)
 
 @console_ns.route("/apps/<uuid:app_id>/workflows/draft/nodes/<string:node_id>/agent-composer")
 class WorkflowAgentComposerApi(Resource):
+    @override
     @setup_required
     @login_required
     @account_initialization_required
@@ -27,6 +29,7 @@ class WorkflowAgentComposerApi(Resource):
             node_id=node_id,
         )
 
+    @override
     @console_ns.expect(console_ns.models[ComposerSavePayload.__name__])
     @setup_required
     @login_required
@@ -47,6 +50,7 @@ class WorkflowAgentComposerApi(Resource):
 
 @console_ns.route("/apps/<uuid:app_id>/workflows/draft/nodes/<string:node_id>/agent-composer/validate")
 class WorkflowAgentComposerValidateApi(Resource):
+    @override
     @console_ns.expect(console_ns.models[ComposerSavePayload.__name__])
     @setup_required
     @login_required
@@ -60,6 +64,7 @@ class WorkflowAgentComposerValidateApi(Resource):
 
 @console_ns.route("/apps/<uuid:app_id>/workflows/draft/nodes/<string:node_id>/agent-composer/candidates")
 class WorkflowAgentComposerCandidatesApi(Resource):
+    @override
     @setup_required
     @login_required
     @account_initialization_required
@@ -70,6 +75,7 @@ class WorkflowAgentComposerCandidatesApi(Resource):
 
 @console_ns.route("/apps/<uuid:app_id>/workflows/draft/nodes/<string:node_id>/agent-composer/impact")
 class WorkflowAgentComposerImpactApi(Resource):
+    @override
     @setup_required
     @login_required
     @account_initialization_required
@@ -85,6 +91,7 @@ class WorkflowAgentComposerImpactApi(Resource):
 
 @console_ns.route("/apps/<uuid:app_id>/workflows/draft/nodes/<string:node_id>/agent-composer/save-to-roster")
 class WorkflowAgentComposerSaveToRosterApi(Resource):
+    @override
     @console_ns.expect(console_ns.models[ComposerSavePayload.__name__])
     @setup_required
     @login_required
@@ -105,6 +112,7 @@ class WorkflowAgentComposerSaveToRosterApi(Resource):
 
 @console_ns.route("/apps/<uuid:app_id>/agent-composer")
 class AgentAppComposerApi(Resource):
+    @override
     @setup_required
     @login_required
     @account_initialization_required
@@ -113,6 +121,7 @@ class AgentAppComposerApi(Resource):
         _, tenant_id = current_account_with_tenant()
         return AgentComposerService.load_agent_app_composer(tenant_id=tenant_id, app_id=app_model.id)
 
+    @override
     @console_ns.expect(console_ns.models[ComposerSavePayload.__name__])
     @setup_required
     @login_required
@@ -132,6 +141,7 @@ class AgentAppComposerApi(Resource):
 
 @console_ns.route("/apps/<uuid:app_id>/agent-composer/validate")
 class AgentAppComposerValidateApi(Resource):
+    @override
     @console_ns.expect(console_ns.models[ComposerSavePayload.__name__])
     @setup_required
     @login_required
@@ -145,6 +155,7 @@ class AgentAppComposerValidateApi(Resource):
 
 @console_ns.route("/apps/<uuid:app_id>/agent-composer/candidates")
 class AgentAppComposerCandidatesApi(Resource):
+    @override
     @setup_required
     @login_required
     @account_initialization_required
