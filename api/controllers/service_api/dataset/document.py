@@ -232,6 +232,19 @@ def _update_document_by_text(tenant_id: str, dataset_id: UUID, document_id: UUID
         }
         args["data_source"] = data_source
 
+    # If only updating name (no text provided), just update the document name without reprocessing
+    if not args.get("text"):
+        # Only update document name
+        document = DocumentService.get_document(dataset.id, str(document_id))
+        if not document:
+            raise ValueError("Document does not exist.")
+        if "name" in args:
+            document.name = args["name"]
+            db.session.commit()
+        documents_and_batch_fields = {"document": marshal(document, document_fields), "batch": None}
+        return documents_and_batch_fields, 200
+
+    # Otherwise, proceed with full document update (reprocess)
     args["original_document_id"] = str(document_id)
     knowledge_config = KnowledgeConfig.model_validate(args)
     DocumentService.document_create_args_validate(knowledge_config)
