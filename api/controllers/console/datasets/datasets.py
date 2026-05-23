@@ -114,6 +114,7 @@ class IndexingEstimatePayload(BaseModel):
     doc_form: str = "text_model"
     dataset_id: str | None = None
     doc_language: str = "English"
+    summary_index_setting: dict[str, Any] | None = None
 
     @field_validator("indexing_technique")
     @classmethod
@@ -130,6 +131,17 @@ class IndexingEstimatePayload(BaseModel):
         if result is None:
             return "text_model"
         return result
+
+    @field_validator("summary_index_setting")
+    @classmethod
+    def validate_summary_index_setting(cls, value: dict[str, Any] | None) -> dict[str, Any] | None:
+        """Convert null values to False for enable field."""
+        if value is None:
+            return None
+        # Fix: convert null enable to False to avoid 400 error
+        if "enable" in value and value["enable"] is None:
+            value["enable"] = False
+        return value
 
 
 class ConsoleDatasetListQuery(BaseModel):
