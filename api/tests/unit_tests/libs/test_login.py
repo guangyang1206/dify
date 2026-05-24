@@ -267,3 +267,66 @@ class TestCurrentAccountWithTenant:
 
         with pytest.raises(AssertionError, match="tenant information should be loaded"):
             login_module.current_account_with_tenant()
+
+
+class TestWithCurrentUser:
+    """Test cases for with_current_user decorator."""
+
+    def test_injects_current_user_into_view(self, mocker: MockerFixture, login_app: Flask):
+        """Test that with_current_user decorator injects current user into view."""
+        account = Account(name="Test User", email="test@example.com")
+        account.current_tenant_id = "tenant-123"
+        mocker.patch.object(login_module, "current_account_with_tenant", return_value=(account, "tenant-123"))
+
+        mock_view = MagicMock(return_value="Success")
+        decorated = login_module.with_current_user(mock_view)
+
+        with login_app.test_request_context():
+            result = decorated("self_arg")
+
+        mock_view.assert_called_once_with("self_arg", account)
+        assert result == "Success"
+
+    def test_raises_when_current_user_is_not_account(self, mocker: MockerFixture, login_app: Flask):
+        """Test that with_current_user raises ValueError when current_user is not Account."""
+        mock_user = MockUser("test_user")
+        mocker.patch.object(login_module, "_resolve_current_user", return_value=mock_user)
+
+        mock_view = MagicMock()
+        decorated = login_module.with_current_user(mock_view)
+
+        with login_app.test_request_context():
+            with pytest.raises(ValueError, match="current_user must be an Account instance"):
+                decorated("self_arg")
+
+    def test_decorated_function_receives_user_as_argument(self, mocker: MockerFixture, login_app: Flask):
+        """Test that the decorated function receives user as argument."""
+        account = Account(name="Test User", email="test@example.com")
+        account.current_tenant_id = "tenant-123"
+        mocker.patch.object(login_module, "current_account_with_tenant", return_value=(account, "tenant-123"))
+
+        received_user = None
+
+        def test_view(self, user: Account) -> str:
+            nonlocal received_user
+            received_user = user
+            return "OK"
+
+        decorated = login_module.with_current_user(test_view)
+
+        with login_app.test_request_context():
+            result = decorated("self_arg")
+
+        assert received_user is account
+        assert result == "OK"
+
+    def test_wraps_preserves_function_metadata(self, mocker: MockerFixture):
+        """Test that with_current_user preserves function metadata."""
+        mock_view = MagicMock(return_value="test")
+        mock_view.__name__ = "test_view"
+        mock_view.__doc__ = "Test view docstring"
+
+        decorated = login_module.with_current_user(mock_view)
+
+        assert decorated.__name__ == "test_view"
+        assert decorated.__doc__ == "Test view docstring"

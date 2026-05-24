@@ -48,6 +48,19 @@ def current_account_with_tenant() -> tuple[Account, str]:
     return user, user.current_tenant_id
 
 
+def with_current_user[
+    T: type[Any],
+    P: ParamSpec("P"),
+    R: TypeVar("R"),
+](view: Callable[Concatenate[T, Account, P], R]) -> Callable[Concatenate[T, P], R]:
+    """Decorator that injects current user (Account) into the view."""
+    @wraps(view)
+    def decorated(self: T, *args: P.args, **kwargs: P.kwargs) -> R:
+        user, _ = current_account_with_tenant()
+        return view(self, user, *args, **kwargs)
+    return decorated  # noqa: RET504
+
+
 def login_required[**P, R](func: Callable[P, R]) -> Callable[P, R | Response]:
     """
     If you decorate a view with this, it will ensure that the current user is
