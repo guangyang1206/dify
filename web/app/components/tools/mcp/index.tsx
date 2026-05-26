@@ -40,9 +40,13 @@ const MCPList = ({
 
   const filteredList = useMemo(() => {
     return list.filter((collection) => {
+      // Always filter for MCP-type collections
+      if (collection.type !== 'mcp')
+        return false
+      // If searching, also match against name
       if (searchText)
         return Object.values(collection.name).some(value => (value as string).toLowerCase().includes(searchText.toLowerCase()))
-      return collection.type === 'mcp'
+      return true
     }) as ToolWithProvider[]
   }, [list, searchText])
 
