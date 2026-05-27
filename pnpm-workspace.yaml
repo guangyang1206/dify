@@ -47,6 +47,7 @@ catalog:
   '@amplitude/analytics-browser': 2.42.4
   '@amplitude/plugin-session-replay-browser': 1.31.0
   '@antfu/eslint-config': 9.0.0
+  '@antv/infographic': 0.2.19
   '@base-ui/react': 1.5.0
   '@chromatic-com/storybook': 5.2.1
   '@cucumber/cucumber': 12.9.0

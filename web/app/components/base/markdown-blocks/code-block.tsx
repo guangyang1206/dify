@@ -12,6 +12,7 @@ import dynamic from '@/next/dynamic'
 import { Theme } from '@/types/app'
 import SVGRenderer from '../svg-gallery' // Assumes svg-gallery.tsx is in /base directory
 import { highlightCode } from './shiki-highlight'
+import InfographicRenderer from './infographic-renderer' // Import Infographic renderer
 
 const Flowchart = dynamic(() => import('@/app/components/base/mermaid'), { ssr: false })
 
@@ -31,6 +32,7 @@ const capitalizationLanguageNameMap: Record<string, string> = {
   markdown: 'MarkDown',
   makefile: 'MakeFile',
   echarts: 'ECharts',
+  infographic: 'Infographic',
   shell: 'Shell',
   powershell: 'PowerShell',
   json: 'JSON',
@@ -464,6 +466,12 @@ const CodeBlock: any = memo(({ inline, className, children = '', ...props }: any
         return (
           <ErrorBoundary>
             <MarkdownMusic children={content} />
+          </ErrorBoundary>
+        )
+      case 'infographic':
+        return (
+          <ErrorBoundary>
+            <InfographicRenderer content={content} theme={isDarkMode ? 'dark' : 'light'} />
           </ErrorBoundary>
         )
       default:
