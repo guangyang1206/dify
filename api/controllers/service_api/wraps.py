@@ -43,6 +43,41 @@ class FetchUserArg(BaseModel):
     required: bool = False
 
 
+def validate(
+    query_model: type[BaseModel] | None = None,
+    json_model: type[BaseModel] | None = None,
+    form_model: type[BaseModel] | None = None,
+):
+    """Decorator to validate request parameters using Pydantic models.
+    
+    Usage:
+        @validate(query_model=MyQueryModel, json_model=MyJsonModel)
+        def get(self, query: MyQueryModel, body: MyJsonModel):
+            ...
+    """
+    def decorator(view_func):
+        @wraps(view_func)
+        def wrapper(*args, **kwargs):
+            # Validate query parameters
+            if query_model:
+                query_data = dict(request.args)
+                kwargs["query"] = query_model(**query_data)
+            
+            # Validate JSON body
+            if json_model:
+                json_data = request.get_json(silent=True) or {}
+                kwargs["json"] = json_model(**json_data)
+            
+            # Validate form data
+            if form_model:
+                form_data = dict(request.form)
+                kwargs["form"] = form_model(**form_data)
+            
+            return view_func(*args, **kwargs)
+        return wrapper
+    return decorator
+
+
 @overload
 def validate_app_token[**P, R](view: Callable[P, R]) -> Callable[P, R]: ...
 
