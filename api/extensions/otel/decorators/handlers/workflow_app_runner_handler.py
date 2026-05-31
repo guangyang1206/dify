@@ -1,3 +1,4 @@
+import contextlib
 import logging
 from collections.abc import Callable
 
@@ -53,12 +54,16 @@ class WorkflowAppRunnerHandler(SpanHandler):
             logger.warning("Failed to prepare span attributes for WorkflowAppRunner.run: %s", exc, exc_info=True)
             return wrapped(*args, **kwargs)
 
-        with tracer.start_as_current_span(span_name, kind=SpanKind.INTERNAL, attributes=attributes) as span:
-            try:
-                result = wrapped(*args, **kwargs)
-                span.set_status(Status(StatusCode.OK))
-                return result
-            except Exception as exc:
-                span.record_exception(exc)
-                span.set_status(Status(StatusCode.ERROR, str(exc)))
-                raise
+        # Fix: Use contextlib.suppress to handle potential double-detach of context
+        # This can happen in streaming responses where the context might be detached
+        # multiple times (e.g., in generators or async generators)
+        with contextlib.suppress(Exception):
+            with tracer.start_as_current_span(span_name, kind=SpanKind.INTERNAL, attributes=attributes) as span:
+                try:
+                    result = wrapped(*args, **kwargs)
+                    span.set_status(Status(StatusCode.OK))
+                    return result
+                except Exception as exc:
+                    span.record_exception(exc)
+                    span.set_status(Status(StatusCode.ERROR, str(exc)))
+                    raise
