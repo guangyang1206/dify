@@ -187,17 +187,49 @@ def make_request(method: str, url: str, max_retries: int = SSRF_DEFAULT_MAX_RETR
             kwargs["headers"] = headers
             response = client.request(method=method, url=url, **kwargs)
 
-            # Check for SSRF protection by Squid proxy
+            # Check for SSRF protection by the proxy
             if response.status_code in (401, 403):
-                # Check if this is a Squid SSRF rejection
+                # Check if this is a proxy SSRF rejection
                 server_header = response.headers.get("server", "").lower()
                 via_header = response.headers.get("via", "").lower()
 
                 # Squid typically identifies itself in Server or Via headers
-                if "squid" in server_header or "squid" in via_header:
+                is_squid = "squid" in server_header or "squid" in via_header
+
+                # Also check for other common proxy identifiers
+                is_proxy = (
+                    is_squid
+                    or "proxy" in server_header
+                    or "proxy" in via_header
+                    or "urlgateway" in server_header.lower()
+                    or "ssrf" in response.text.lower()
+                )
+
+                # Always raise ToolSSRFError for 401/403 from the SSRF proxy
+                # This provides a clear error message to the user
+                if is_proxy or response.status_code == 403:
+                    # Try to extract error details from response body
+                    error_detail = ""
+                    try:
+                        if response.text:
+                            # Limit error detail to 500 chars to avoid huge error messages
+                            error_detail = response.text[:500]
+                    except Exception:
+                        pass
+
                     raise ToolSSRFError(
-                        f"Access to '{url}' was blocked by SSRF protection. "
+                        f"Access to '{url}' was blocked by SSRF protection (HTTP {response.status_code}). "
                         f"The URL may point to a private or local network address. "
+                        f"If you are using Dify Cloud, please contact Dify support to whitelist this URL. "
+                        f"Error detail: {error_detail}"
+                    )
+
+                # If 403 is not from proxy, log a warning but don't block
+                if response.status_code == 403:
+                    logger.warning(
+                        "Received 403 for URL %s but SSRF proxy not detected. "
+                        "Server header: %s, Via header: %s",
+                        url, server_header, via_header
                     )
 
             if response.status_code not in STATUS_FORCELIST:
