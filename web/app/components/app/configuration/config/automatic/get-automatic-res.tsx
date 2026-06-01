@@ -4,6 +4,7 @@ import type { FormValue } from '@/app/components/header/account-setting/model-pr
 // type
 import type { GenRes } from '@/service/debug'
 import type { AppModeEnum, CompletionParams, Model, ModelModeType } from '@/types/app'
+import { useLocalStorage } from '@/hooks/use-local-storage'
 import {
   AlertDialog,
   AlertDialogActions,
@@ -90,9 +91,7 @@ const GetAutomaticRes: FC<IGetAutomaticResProps> = ({
   onFinished,
 }) => {
   const { t } = useTranslation()
-  const localModel = localStorage.getItem('auto-gen-model')
-    ? JSON.parse(localStorage.getItem('auto-gen-model') as string) as Model
-    : null
+  const [localModel, setLocalModel] = useLocalStorage<Model | null>('auto-gen-model', null)
   const [model, setModel] = React.useState<Model>(localModel || {
     name: '',
     provider: '',
@@ -182,9 +181,6 @@ const GetAutomaticRes: FC<IGetAutomaticResProps> = ({
 
   useEffect(() => {
     if (defaultModel) {
-      const localModel = localStorage.getItem('auto-gen-model')
-        ? JSON.parse(localStorage.getItem('auto-gen-model') || '')
-        : null
       if (localModel) {
         setModel(localModel)
       }
@@ -196,7 +192,7 @@ const GetAutomaticRes: FC<IGetAutomaticResProps> = ({
         }))
       }
     }
-  }, [defaultModel])
+  }, [defaultModel, localModel])
 
   const renderLoading = (
     <div className="flex h-full w-0 grow flex-col items-center justify-center space-y-3">
@@ -213,8 +209,8 @@ const GetAutomaticRes: FC<IGetAutomaticResProps> = ({
       mode: newValue.mode as ModelModeType,
     }
     setModel(newModel)
-    localStorage.setItem('auto-gen-model', JSON.stringify(newModel))
-  }, [model, setModel])
+    setLocalModel(newModel)
+  }, [model, setModel, setLocalModel])
 
   const handleCompletionParamsChange = useCallback((newParams: FormValue) => {
     const newModel = {
@@ -222,8 +218,8 @@ const GetAutomaticRes: FC<IGetAutomaticResProps> = ({
       completion_params: newParams as CompletionParams,
     }
     setModel(newModel)
-    localStorage.setItem('auto-gen-model', JSON.stringify(newModel))
-  }, [model, setModel])
+    setLocalModel(newModel)
+  }, [model, setModel, setLocalModel])
 
   const onGenerate = async () => {
     if (!isValid())
