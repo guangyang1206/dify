@@ -10,6 +10,7 @@ import { useStore as useAppStore } from '@/app/components/app/store'
 import { useEventEmitterContextContext } from '@/context/event-emitter'
 import useBreakpoints, { MediaType } from '@/hooks/use-breakpoints'
 import { usePathname } from '@/next/navigation'
+import { useLocalStorage } from '@/hooks/use-local-storage'
 import Divider from '../base/divider'
 import AppInfo, { AppInfoView } from './app-info'
 import AppSidebarDropdown from './app-sidebar-dropdown'
@@ -56,7 +57,7 @@ const AppDetailNav = ({
   const pathname = usePathname()
   const inWorkflowCanvas = pathname.endsWith('/workflow')
   const isPipelineCanvas = pathname.endsWith('/pipeline')
-  const workflowCanvasMaximize = localStorage.getItem('workflow-canvas-maximize') === 'true'
+  const [workflowCanvasMaximize, setWorkflowCanvasMaximize] = useLocalStorage<boolean>('workflow-canvas-maximize', false)
   const [hideHeader, setHideHeader] = useState(workflowCanvasMaximize)
   const { eventEmitter } = useEventEmitterContextContext()
 
@@ -65,12 +66,14 @@ const AppDetailNav = ({
       setHideHeader(v.payload)
   })
 
+  const [appDetailCollapseOrExpand, setAppDetailCollapseOrExpand] = useLocalStorage<string>('app-detail-collapse-or-expand', 'expand')
+
   useEffect(() => {
     if (appSidebarExpand) {
-      localStorage.setItem('app-detail-collapse-or-expand', appSidebarExpand)
+      setAppDetailCollapseOrExpand(appSidebarExpand)
       setAppSidebarExpand(appSidebarExpand)
     }
-  }, [appSidebarExpand, setAppSidebarExpand])
+  }, [appSidebarExpand, setAppSidebarExpand, setAppDetailCollapseOrExpand])
 
   useHotkey('Mod+B', (e) => {
     e.preventDefault()
