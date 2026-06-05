@@ -1,4 +1,5 @@
 /* eslint-disable react-hooks-extra/no-direct-set-state-in-use-effect */
+import { use } from 'react'
 import type { UseEmblaCarouselType } from 'embla-carousel-react'
 import { cn } from '@langgenius/dify-ui/cn'
 import Autoplay from 'embla-carousel-autoplay'
@@ -29,7 +30,7 @@ type CarouselContextValue = {
 const CarouselContext = React.createContext<CarouselContextValue | null>(null)
 
 function useCarousel() {
-  const context = React.useContext(CarouselContext)
+  const context = use(CarouselContext)
 
   if (!context)
     throw new Error('useCarousel must be used within a <Carousel />')
