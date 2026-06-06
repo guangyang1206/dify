@@ -64,6 +64,7 @@ const AppDetailNav = ({
   const [workflowCanvasMaximize] = useLocalStorage<boolean>('workflow-canvas-maximize', false, { raw: true })
   const [hideHeader, setHideHeader] = useState(workflowCanvasMaximize)
   const { eventEmitter } = useEventEmitterContextContext()
+  const setAppSidebarMode = useSetLocalStorage<string>('app-detail-collapse-or-expand', { raw: true })
 
   eventEmitter?.useSubscription((v: any) => {
     if (v?.type === 'workflow-canvas-maximize')
@@ -72,10 +73,10 @@ const AppDetailNav = ({
 
   useEffect(() => {
     if (appSidebarExpand) {
-      localStorage.setItem('app-detail-collapse-or-expand', appSidebarExpand)
+      setAppSidebarMode(appSidebarExpand)
       setAppSidebarExpand(appSidebarExpand)
     }
-  }, [appSidebarExpand, setAppSidebarExpand])
+  }, [appSidebarExpand, setAppSidebarExpand, setAppSidebarMode])
 
   useHotkey('Mod+B', (e) => {
     e.preventDefault()
